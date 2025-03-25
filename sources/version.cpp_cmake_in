@@ -1,0 +1,3 @@
+unsigned short int VERSION_MAJOR = @VERSION_MAJOR@;
+unsigned short int VERSION_MINOR = @VERSION_MINOR@;
+unsigned short int VERSION_PATCH = @VERSION_PATCH@;

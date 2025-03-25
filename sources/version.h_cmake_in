@@ -1,0 +1,11 @@
+#ifndef VERSION_H
+
+#define VERSION_H
+
+#cmakedefine PROJ_VERSION_DISPL
+
+extern unsigned short int VERSION_MAJOR;
+extern unsigned short int VERSION_MINOR;
+extern unsigned short int VERSION_PATCH;
+
+#endif // VERSION_H
