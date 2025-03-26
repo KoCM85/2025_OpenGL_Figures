@@ -3,11 +3,17 @@
 #include <cstdlib>
 #include <string_view>
 #include <string>
+#include <array>
+#include <vector>
+#include <sstream>
+#include <filesystem>
 
 #include "GLAD/glad.h"
 #include "GLFW/glfw3.h"
 
 #include "version.h"
+#include "shader.h"
+#include "gl_utility.h"
 
 namespace { 
 	struct RGBA {
@@ -17,8 +23,6 @@ namespace {
 		GLfloat a;
 	};
 
-	void logger(std::ofstream& logs_, const std::string_view& logs_file_name_, std::string_view& log_info_);
-
 	void poll_events(GLFWwindow* window_);
 
 	void framebuffer_size(GLFWwindow* window_, int width_, int height_);
@@ -27,8 +31,6 @@ namespace {
 }
 
 int main() {
-	std::ofstream logs;
-	std::string_view logs_file_name("logs");
 	int width = 2048;
 	int height = 1024;
 	std::string window_title = "g00dboyo ";
@@ -36,11 +38,26 @@ int main() {
 	const int opengl_version_minor = 5;
 	RGBA background_rgba{ 0.3f, 0.4f, 0.3f, 1.0f };
 
+	const GLsizei vertex_buffer_num = 4;
+	const GLsizei vertex_array_num = 4;
+	GLuint vertex_buffer_id[vertex_buffer_num];
+	GLuint vertex_array_id[vertex_array_num];
+
+	const GLchar point_attrib_name[] = "point";
+
+	std::array<std::vector<GLfloat>, 4> figures;
+
+	figures[0] = {
+		-0.95f, -0.95f, 0.0f,
+		-0.5f, -0.2f, 0.0f,
+		-0.1f, -0.95f, 0.0f
+	};
+
 	int is_glfw_init = glfwInit();
 	if (!is_glfw_init) {
 		std::string_view log_info("GLFW dosn't initialized");
 
-		logger(logs, logs_file_name, log_info);
+		logger(log_info);
 
 		return EXIT_FAILURE;
 	}
@@ -59,7 +76,7 @@ int main() {
 	if (!window) {
 		std::string_view log_info("GLFW window dosn't created");
 
-		logger(logs, logs_file_name, log_info);
+		logger(log_info);
 
 		glfwTerminate();
 
@@ -74,7 +91,7 @@ int main() {
 	if (!is_glad_init) {
 		std::string_view log_info("GLAD dosn't initialized");
 
-		logger(logs, logs_file_name, log_info);
+		logger(log_info);
 
 		glfwTerminate();
 
@@ -83,10 +100,80 @@ int main() {
 	
 	glfwSetFramebufferSizeCallback(window, framebuffer_size);
 
+
+	shader vertex_shader("vertex.vert", GL_VERTEX_SHADER);
+	vertex_shader.configure_shader();
+	GLint vertex_shader_status = vertex_shader.shader_status(GL_COMPILE_STATUS);
+
+	if (!vertex_shader_status) {
+		std::string_view log_info("Vertex shader dosn't compiled");
+
+		logger(log_info);
+
+		glfwTerminate();
+
+		return EXIT_FAILURE;
+	}
+
+	shader fragment_shader("fragment.frag", GL_FRAGMENT_SHADER);
+	fragment_shader.configure_shader();
+	GLint fragment_shader_status = fragment_shader.shader_status(GL_COMPILE_STATUS);
+
+	if (!fragment_shader_status) {
+		std::string_view log_info("Fragment shader dosn't compiled");
+
+		logger(log_info);
+
+		glfwTerminate();
+
+		return EXIT_FAILURE;
+	}
+
+	GLuint program_id = glCreateProgram();
+	glAttachShader(program_id, vertex_shader.get_id());
+	glAttachShader(program_id, fragment_shader.get_id());
+	glLinkProgram(program_id);
+
+	GLint program_status;
+	glGetProgramiv(program_id, GL_LINK_STATUS, &program_status);
+
+	if (!program_status) {
+		std::string_view log_info("Program dosn't linked");
+		const GLsizei buf_size = 512;
+		GLchar info[buf_size];
+
+		glGetProgramInfoLog(program_id, buf_size, nullptr, info);
+		
+		logger(log_info, info);
+
+		glfwTerminate();
+
+		return EXIT_FAILURE;
+	}
+
+	glDeleteShader(vertex_shader.get_id());
+	glDeleteShader(fragment_shader.get_id());
+
+	glGenVertexArrays(vertex_array_num, vertex_array_id);
+	glGenBuffers(vertex_buffer_num, vertex_buffer_id);
+
+	glBindVertexArray(vertex_array_id[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id[0]);
+
+	glBufferData(GL_ARRAY_BUFFER, figures[0].size() * sizeof(GLfloat), figures[0].data(), GL_STATIC_DRAW);
+
+	GLint point_attrib_id = glGetAttribLocation(program_id, point_attrib_name);
+	glEnableVertexAttribArray(point_attrib_id);
+	glVertexAttribPointer(point_attrib_id, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
+
+	glUseProgram(program_id);
+
 	glClearColor(background_rgba.r, background_rgba.g, background_rgba.b, background_rgba.a);
 
 	while (!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT); // GL_DEPTH_BUFFER_BIT    GL_STENCIL_BUFFER_BIT
+
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		glfwSwapBuffers(window);
 		
@@ -99,19 +186,6 @@ int main() {
 }
 
 namespace {
-	void logger(std::ofstream& logs_, const std::string_view& logs_file_name_, std::string_view& log_info_) {
-		logs_.open(logs_file_name_.data(), std::ios::binary | std::ios::app | std::ios::out);
-
-		if (logs_.is_open()) {
-			logs_ << log_info_ << '\n';
-
-			logs_.close();
-		}
-		else {
-			std::cerr << log_info_ << '\n';
-		}
-	}
-
 	void poll_events(GLFWwindow* window_) {
 		int key_status = glfwGetKey(window_, GLFW_KEY_ESCAPE);
 		if (key_status == GLFW_PRESS) {
