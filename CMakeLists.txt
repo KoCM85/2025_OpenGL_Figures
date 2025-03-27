@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28)
 
 set(VERSION_MAJOR 2)
-set(VERSION_MINOR 0)
+set(VERSION_MINOR 1)
 set(VERSION_PATCH 0)
 
 project(OpenGL_Figures LANGUAGES C CXX VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
@@ -27,9 +27,10 @@ elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 	set(PROJ_GRAPHIC_DIR /home/serg/Documents/Sources/Graphic/OpenGL)
 endif()
 
-set(PROJ_TEMP_DIR ${CMAKE_SOURCE_DIR}/build)
-set(PROJ_SOURCE_DIR ${CMAKE_SOURCE_DIR}/sources)
+set(PROJ_TEMP_DIR ${CMAKE_SOURCE_DIR}/build/temp_sources)
+set(PROJ_SOURCE_DIR ${CMAKE_SOURCE_DIR}/sources/)
 set(PROJ_SHADER_DIR ${PROJ_SOURCE_DIR}/shaders)
+set(PROJ_CPP_SOURCE_DIR ${PROJ_SOURCE_DIR}/cpp_sources)
 
 set(PROJ_SHADER_SOURCES 
 	${PROJ_SHADER_DIR}/vertex.vert
@@ -40,11 +41,11 @@ set(PROJ_TEMP_SOURCES
 	${PROJ_TEMP_DIR}/version.h
 	${PROJ_TEMP_DIR}/version.cpp)
 set(PROJ_SOURCES 
-	${PROJ_SOURCE_DIR}/main.cpp
-	${PROJ_SOURCE_DIR}/shader.h
-	${PROJ_SOURCE_DIR}/shader.cpp
-	${PROJ_SOURCE_DIR}/gl_utility.h
-	${PROJ_SOURCE_DIR}/gl_utility.cpp
+	${PROJ_CPP_SOURCE_DIR}/main.cpp
+	${PROJ_CPP_SOURCE_DIR}/shader.h
+	${PROJ_CPP_SOURCE_DIR}/shader.cpp
+	${PROJ_CPP_SOURCE_DIR}/gl_utility.h
+	${PROJ_CPP_SOURCE_DIR}/gl_utility.cpp
 	${PROJ_SHADER_SOURCES})
 set(PROJ_LIBRARIES ${PROJ_LIBRARIES}
 	glfw3
@@ -60,8 +61,8 @@ set(PROJ_RUNTIME_BUILD_DIR ${CMAKE_SOURCE_DIR}/binary/${PROJ_ARCHITECTURE}/$<CON
 
 set(PROJ_SHADER_OUTPUT_DIR ${PROJ_RUNTIME_BUILD_DIR}/shaders)
 
-set(PROJ_CONFIG_FILE_1_IN ${PROJ_SOURCE_DIR}/version.h_cmake_in)
-set(PROJ_CONFIG_FILE_2_IN ${PROJ_SOURCE_DIR}/version.cpp_cmake_in)
+set(PROJ_CONFIG_FILE_1_IN ${PROJ_CPP_SOURCE_DIR}/version.h_cmake_in)
+set(PROJ_CONFIG_FILE_2_IN ${PROJ_CPP_SOURCE_DIR}/version.cpp_cmake_in)
 set(PROJ_CONFIG_FILE_1_OUT ${PROJ_TEMP_DIR}/version.h)
 set(PROJ_CONFIG_FILE_2_OUT ${PROJ_TEMP_DIR}/version.cpp)
 

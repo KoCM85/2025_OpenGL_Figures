@@ -1,12 +1,8 @@
-#include <iostream>
-#include <fstream>
 #include <cstdlib>
 #include <string_view>
 #include <string>
 #include <array>
 #include <vector>
-#include <sstream>
-#include <filesystem>
 
 #include "GLAD/glad.h"
 #include "GLFW/glfw3.h"
@@ -129,30 +125,24 @@ int main() {
 		return EXIT_FAILURE;
 	}
 
-	GLuint program_id = glCreateProgram();
-	glAttachShader(program_id, vertex_shader.get_id());
-	glAttachShader(program_id, fragment_shader.get_id());
-	glLinkProgram(program_id);
-
-	GLint program_status;
-	glGetProgramiv(program_id, GL_LINK_STATUS, &program_status);
+	shader_program program;
+	program.attach_shader(vertex_shader.get_id(), fragment_shader.get_id());
+	program.link_program();
+	GLint program_status = program.program_status(GL_LINK_STATUS);
 
 	if (!program_status) {
-		std::string_view log_info("Program dosn't linked");
-		const GLsizei buf_size = 512;
-		GLchar info[buf_size];
+		std::string_view log_info("Shader program dosn't linked");
 
-		glGetProgramInfoLog(program_id, buf_size, nullptr, info);
-		
-		logger(log_info, info);
+		logger(log_info);
 
 		glfwTerminate();
 
 		return EXIT_FAILURE;
 	}
 
-	glDeleteShader(vertex_shader.get_id());
-	glDeleteShader(fragment_shader.get_id());
+	GLuint program_id = program.get_id();
+
+	program.delete_shaders();
 
 	glGenVertexArrays(vertex_array_num, vertex_array_id);
 	glGenBuffers(vertex_buffer_num, vertex_buffer_id);
@@ -166,7 +156,7 @@ int main() {
 	glEnableVertexAttribArray(point_attrib_id);
 	glVertexAttribPointer(point_attrib_id, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
 
-	glUseProgram(program_id);
+	program.use_program();
 
 	glClearColor(background_rgba.r, background_rgba.g, background_rgba.b, background_rgba.a);
 
@@ -180,6 +170,8 @@ int main() {
 		poll_events(window);
 	}
 
+	glDeleteVertexArrays(vertex_array_num, vertex_array_id);
+	glDeleteBuffers(vertex_buffer_num, vertex_buffer_id);
 	glfwTerminate();
 
 	return EXIT_SUCCESS;

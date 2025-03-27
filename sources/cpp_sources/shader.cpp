@@ -5,6 +5,7 @@
 
 #include "gl_utility.h"
 
+// shader
 shader::shader(std::string_view shader_file_, GLenum shader_type_) : file_name(shader_file_), type(shader_type_) {
 	read_shader();
 
@@ -61,3 +62,47 @@ void shader::read_shader() {
 		logger(log_info, shader_full_path.generic_string());
 	}
 }
+// shader
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+// shader_program
+shader_program::shader_program() {
+	id = glCreateProgram();
+	shaders_id.reserve(10);
+}
+
+const GLuint& shader_program::get_id() {
+	return id;
+}
+
+void shader_program::link_program() {
+	glLinkProgram(id);
+}
+
+GLint shader_program::program_status(GLenum operation_param_) {
+	GLint program_status;
+
+	glGetProgramiv(id, operation_param_, &program_status);
+
+	if (!program_status) {
+		const GLsizei buf_size = 512;
+		GLchar info[buf_size];
+
+		glGetProgramInfoLog(id, buf_size, nullptr, info);
+
+		logger(info);
+	}
+
+	return program_status;
+}
+
+void shader_program::delete_shaders() {
+	for (GLuint& shader_id : shaders_id)
+		glDeleteShader(shader_id);
+}
+
+void shader_program::use_program() {
+	glUseProgram(id);
+}
+// shader_program

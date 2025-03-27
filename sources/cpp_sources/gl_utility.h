@@ -2,7 +2,6 @@
 
 #define GL_UTILITY_H
 
-#include <fstream>
 #include <string_view>
 
 void logger(std::string_view log_info_, std::string_view info_ = " ");
