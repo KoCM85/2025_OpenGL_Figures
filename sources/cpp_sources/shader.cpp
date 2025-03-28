@@ -105,4 +105,9 @@ void shader_program::delete_shaders() {
 void shader_program::use_program() {
 	glUseProgram(id);
 }
+
+void shader_program::release() {
+	glDeleteProgram(id);
+}
+
 // shader_program

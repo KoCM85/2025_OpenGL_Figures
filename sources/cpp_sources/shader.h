@@ -12,9 +12,9 @@ class shader {
 public:
 	shader(std::string_view shader_file_, GLenum shader_type_);
 	shader(const shader&) = delete;
-	shader(shader&&) = delete;
+	shader(shader&&) = default;
 	shader& operator=(const shader&) = delete;
-	shader& operator=(shader&&) = delete;
+	shader& operator=(shader&&) = default;
 	~shader() = default;
 
 	void configure_shader();
@@ -37,9 +37,9 @@ class shader_program {
 public:
 	shader_program();
 	shader_program(const shader_program&) = delete;
-	shader_program(shader_program&&) = delete;
-	shader_program operator=(const shader_program&) = delete;
-	shader_program operator=(shader_program&&) = delete;
+	shader_program(shader_program&&) = default;
+	shader_program& operator=(const shader_program&) = delete;
+	shader_program& operator=(shader_program&&) = default;
 	~shader_program() = default;
 
 	const GLuint& get_id();
@@ -60,6 +60,8 @@ public:
 	void delete_shaders();
 
 	void use_program();
+
+	void release();
 
 private:
 	inline void attach_shader() {}

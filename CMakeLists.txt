@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 
-set(VERSION_MAJOR 2)
+set(VERSION_MAJOR 3)
 set(VERSION_MINOR 1)
 set(VERSION_PATCH 0)
 
@@ -33,9 +33,10 @@ set(PROJ_SHADER_DIR ${PROJ_SOURCE_DIR}/shaders)
 set(PROJ_CPP_SOURCE_DIR ${PROJ_SOURCE_DIR}/cpp_sources)
 
 set(PROJ_SHADER_SOURCES 
-	${PROJ_SHADER_DIR}/vertex.vert
-	${PROJ_SHADER_DIR}/fragment.frag
-	${PROJ_SHADER_DIR}/fragment_changing.frag
+	${PROJ_SHADER_DIR}/1_StaticObj_Interpolation.vert
+	${PROJ_SHADER_DIR}/1_Interpolation.frag
+	${PROJ_SHADER_DIR}/2_StaticObj.vert
+	${PROJ_SHADER_DIR}/2_dynamicInterpolation.frag
 )
 set(PROJ_TEMP_SOURCES
 	${PROJ_TEMP_DIR}/version.h
@@ -46,6 +47,10 @@ set(PROJ_SOURCES
 	${PROJ_CPP_SOURCE_DIR}/shader.cpp
 	${PROJ_CPP_SOURCE_DIR}/gl_utility.h
 	${PROJ_CPP_SOURCE_DIR}/gl_utility.cpp
+	${PROJ_CPP_SOURCE_DIR}/shape.h
+	${PROJ_CPP_SOURCE_DIR}/shape.cpp
+	${PROJ_CPP_SOURCE_DIR}/figures_data.h
+	${PROJ_CPP_SOURCE_DIR}/figures_data.cpp
 	${PROJ_SHADER_SOURCES})
 set(PROJ_LIBRARIES ${PROJ_LIBRARIES}
 	glfw3

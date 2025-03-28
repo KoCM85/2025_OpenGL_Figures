@@ -4,12 +4,14 @@
 #include <array>
 #include <vector>
 
+
 #include "GLAD/glad.h"
 #include "GLFW/glfw3.h"
 
 #include "version.h"
 #include "shader.h"
 #include "gl_utility.h"
+#include "shape.h"
 
 namespace { 
 	struct RGBA {
@@ -34,20 +36,16 @@ int main() {
 	const int opengl_version_minor = 5;
 	RGBA background_rgba{ 0.3f, 0.4f, 0.3f, 1.0f };
 
-	const GLsizei vertex_buffer_num = 4;
-	const GLsizei vertex_array_num = 4;
-	GLuint vertex_buffer_id[vertex_buffer_num];
-	GLuint vertex_array_id[vertex_array_num];
+	std::string point_attrib_name = "point";
+	std::string color_attrib_name = "color";
+	std::string time_attrib_name = "time";
 
-	const GLchar point_attrib_name[] = "point";
-
-	std::array<std::vector<GLfloat>, 4> figures;
-
-	figures[0] = {
-		-0.95f, -0.95f, 0.0f,
-		-0.5f, -0.2f, 0.0f,
-		-0.1f, -0.95f, 0.0f
-	};
+	constexpr size_t program_size = 2;
+	std::array<std::string_view, program_size> vertex_shader_files{ "1_staticObj_interpolation.vert" , "2_StaticObj.vert" };
+	std::array<std::string_view, program_size> fragment_shader_files{ "1_Interpolation.frag", "2_dynamicInterpolation.frag" };
+	std::vector<shader> vertex_shaders;
+	std::vector<shader> fragment_shaders;
+	std::vector<shader_program> programs;
 
 	int is_glfw_init = glfwInit();
 	if (!is_glfw_init) {
@@ -95,74 +93,95 @@ int main() {
 	}
 	
 	glfwSetFramebufferSizeCallback(window, framebuffer_size);
+	
+	vertex_shaders.reserve(vertex_shader_files.size());
+	fragment_shaders.reserve(fragment_shader_files.size());
 
+	for (auto&& vertex_shader_file : vertex_shader_files) {
+		vertex_shaders.emplace_back(vertex_shader_file, GL_VERTEX_SHADER);
+		vertex_shaders.back().configure_shader();
+		GLint vertex_shader_status = vertex_shaders.back().shader_status(GL_COMPILE_STATUS);
 
-	shader vertex_shader("vertex.vert", GL_VERTEX_SHADER);
-	vertex_shader.configure_shader();
-	GLint vertex_shader_status = vertex_shader.shader_status(GL_COMPILE_STATUS);
+		if (!vertex_shader_status) {
+			std::string_view log_info("Vertex shader dosn't compiled");
 
-	if (!vertex_shader_status) {
-		std::string_view log_info("Vertex shader dosn't compiled");
+			logger(log_info);
 
-		logger(log_info);
+			glfwTerminate();
 
-		glfwTerminate();
-
-		return EXIT_FAILURE;
+			return EXIT_FAILURE;
+		}
 	}
 
-	shader fragment_shader("fragment.frag", GL_FRAGMENT_SHADER);
-	fragment_shader.configure_shader();
-	GLint fragment_shader_status = fragment_shader.shader_status(GL_COMPILE_STATUS);
+	for (auto&& fragment_shader_file : fragment_shader_files) {
+		fragment_shaders.emplace_back(fragment_shader_file, GL_FRAGMENT_SHADER);
+		fragment_shaders.back().configure_shader();
+		GLint fragment_shader_status = fragment_shaders.back().shader_status(GL_COMPILE_STATUS);
 
-	if (!fragment_shader_status) {
-		std::string_view log_info("Fragment shader dosn't compiled");
+		if (!fragment_shader_status) {
+			std::string_view log_info("Fragment shader dosn't compiled");
 
-		logger(log_info);
+			logger(log_info);
 
-		glfwTerminate();
+			glfwTerminate();
 
-		return EXIT_FAILURE;
+			return EXIT_FAILURE;
+		}
 	}
 
-	shader_program program;
-	program.attach_shader(vertex_shader.get_id(), fragment_shader.get_id());
-	program.link_program();
-	GLint program_status = program.program_status(GL_LINK_STATUS);
+	programs.reserve(program_size);
 
-	if (!program_status) {
-		std::string_view log_info("Shader program dosn't linked");
+	for (size_t index = 0; index < program_size; ++index) {
+		programs.emplace_back();
+		programs[index].attach_shader(vertex_shaders[index].get_id(), fragment_shaders[index].get_id());
+		programs[index].link_program();
+		GLint program_status = programs[index].program_status(GL_LINK_STATUS);
 
-		logger(log_info);
+		if (!program_status) {
+			std::string_view log_info("Shader program dosn't linked");
 
-		glfwTerminate();
+			logger(log_info);
 
-		return EXIT_FAILURE;
+			glfwTerminate();
+
+			return EXIT_FAILURE;
+		}
+
+		programs[index].delete_shaders();
 	}
 
-	GLuint program_id = program.get_id();
-
-	program.delete_shaders();
-
-	glGenVertexArrays(vertex_array_num, vertex_array_id);
-	glGenBuffers(vertex_buffer_num, vertex_buffer_id);
-
-	glBindVertexArray(vertex_array_id[0]);
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id[0]);
-
-	glBufferData(GL_ARRAY_BUFFER, figures[0].size() * sizeof(GLfloat), figures[0].data(), GL_STATIC_DRAW);
-
-	GLint point_attrib_id = glGetAttribLocation(program_id, point_attrib_name);
-	glEnableVertexAttribArray(point_attrib_id);
-	glVertexAttribPointer(point_attrib_id, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
-
-	program.use_program();
+	std::vector<shape::attrib_t> attribs_1{
+		{point_attrib_name, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0},
+		{color_attrib_name, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 3 * sizeof(GLfloat)} };
+	
+	std::vector<shape::attrib_t> attribs_2{
+		{point_attrib_name, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0},
+		{color_attrib_name, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 3 * sizeof(GLfloat)} };
+	
+	std::vector<std::string_view> uniform_attribs_2{
+		time_attrib_name };
+	
+	std::vector<shape> shapes;
+	shapes.reserve(figures.size());
+	shapes.emplace_back(std::move(figures[0]), GL_STATIC_DRAW, programs[0].get_id(), std::move(attribs_1));
+	shapes.emplace_back(std::move(figures[1]), GL_STATIC_DRAW, programs[1].get_id(), std::move(attribs_2), std::move(uniform_attribs_2));
 
 	glClearColor(background_rgba.r, background_rgba.g, background_rgba.b, background_rgba.a);
 
 	while (!glfwWindowShouldClose(window)) {
-		glClear(GL_COLOR_BUFFER_BIT); // GL_DEPTH_BUFFER_BIT    GL_STENCIL_BUFFER_BIT
+		double time = glfwGetTime();
 
+		glClear(GL_COLOR_BUFFER_BIT); // GL_DEPTH_BUFFER_BIT    GL_STENCIL_BUFFER_BIT
+		
+		shapes[0].bind_vao();
+		programs[0].use_program();
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		
+		shapes[1].bind_vao();
+		programs[1].use_program();
+		auto time_uniform_id = shapes[1].get_uniforms_id()[0];
+		glUniform1f(time_uniform_id, time);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		glfwSwapBuffers(window);
@@ -170,8 +189,11 @@ int main() {
 		poll_events(window);
 	}
 
-	glDeleteVertexArrays(vertex_array_num, vertex_array_id);
-	glDeleteBuffers(vertex_buffer_num, vertex_buffer_id);
+	for (shape& figure : shapes)
+		figure.release_resources();
+	for (shader_program& program : programs)
+		program.release();
+
 	glfwTerminate();
 
 	return EXIT_SUCCESS;
