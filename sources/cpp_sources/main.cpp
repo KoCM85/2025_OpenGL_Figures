@@ -36,9 +36,9 @@ int main() {
 	const int opengl_version_minor = 5;
 	RGBA background_rgba{ 0.3f, 0.4f, 0.3f, 1.0f };
 
-	std::string point_attrib_name = "point";
-	std::string color_attrib_name = "color";
-	std::string time_attrib_name = "time";
+	std::string_view point_attrib_name = "point";
+	std::string_view color_attrib_name = "color";
+	std::string_view time_attrib_name = "time";
 
 	constexpr size_t program_size = 2;
 	std::array<std::string_view, program_size> vertex_shader_files{ "1_staticObj_interpolation.vert" , "2_StaticObj.vert" };
@@ -151,12 +151,12 @@ int main() {
 	}
 
 	std::vector<shape::attrib_t> attribs_1{
-		{point_attrib_name, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0},
-		{color_attrib_name, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 3 * sizeof(GLfloat)} };
+		{point_attrib_name, 3, GL_FLOAT, GL_FALSE, static_cast<GLsizei>(6 * sizeof(GLfloat)), static_cast<GLintptr>(0)},
+		{color_attrib_name, 3, GL_FLOAT, GL_FALSE, static_cast<GLsizei>(6 * sizeof(GLfloat)), static_cast<GLintptr>(3 * sizeof(GLfloat))} };
 	
 	std::vector<shape::attrib_t> attribs_2{
-		{point_attrib_name, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0},
-		{color_attrib_name, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 3 * sizeof(GLfloat)} };
+		{point_attrib_name, 3, GL_FLOAT, GL_FALSE, static_cast<GLsizei>(6 * sizeof(GLfloat)), static_cast<GLintptr>(0)},
+		{color_attrib_name, 3, GL_FLOAT, GL_FALSE, static_cast<GLsizei>(6 * sizeof(GLfloat)), static_cast<GLintptr>(3 * sizeof(GLfloat))} };
 	
 	std::vector<std::string_view> uniform_attribs_2{
 		time_attrib_name };
@@ -188,6 +188,8 @@ int main() {
 		
 		poll_events(window);
 	}
+
+
 
 	for (shape& figure : shapes)
 		figure.release_resources();
