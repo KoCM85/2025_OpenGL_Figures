@@ -40,9 +40,9 @@ int main() {
 	std::string_view color_attrib_name = "color";
 	std::string_view time_attrib_name = "time";
 
-	constexpr size_t program_size = 2;
-	std::array<std::string_view, program_size> vertex_shader_files{ "1_staticObj_interpolation.vert" , "2_StaticObj.vert" };
-	std::array<std::string_view, program_size> fragment_shader_files{ "1_Interpolation.frag", "2_dynamicInterpolation.frag" };
+	constexpr size_t program_size = 3;
+	std::array<std::string_view, program_size> vertex_shader_files{ "StaticObj_Color.vert" , "StaticObj_Color.vert", "DynamicObj.vert" };
+	std::array<std::string_view, program_size> fragment_shader_files{ "Interpolation.frag", "DynamicInterpolation.frag", "DynamicColor.frag" };
 	std::vector<shader> vertex_shaders;
 	std::vector<shader> fragment_shaders;
 	std::vector<shader_program> programs;
@@ -150,29 +150,47 @@ int main() {
 		programs[index].delete_shaders();
 	}
 
+	std::vector<shape::attrib_t> attribs_0{
+		{point_attrib_name, 3, GL_FLOAT, GL_FALSE, static_cast<GLsizei>(6 * sizeof(GLfloat)), static_cast<GLintptr>(0)},
+		{color_attrib_name, 3, GL_FLOAT, GL_FALSE, static_cast<GLsizei>(6 * sizeof(GLfloat)), static_cast<GLintptr>(3 * sizeof(GLfloat))}
+	};
+	
 	std::vector<shape::attrib_t> attribs_1{
 		{point_attrib_name, 3, GL_FLOAT, GL_FALSE, static_cast<GLsizei>(6 * sizeof(GLfloat)), static_cast<GLintptr>(0)},
-		{color_attrib_name, 3, GL_FLOAT, GL_FALSE, static_cast<GLsizei>(6 * sizeof(GLfloat)), static_cast<GLintptr>(3 * sizeof(GLfloat))} };
-	
+		{color_attrib_name, 3, GL_FLOAT, GL_FALSE, static_cast<GLsizei>(6 * sizeof(GLfloat)), static_cast<GLintptr>(3 * sizeof(GLfloat))}
+	};
+
 	std::vector<shape::attrib_t> attribs_2{
-		{point_attrib_name, 3, GL_FLOAT, GL_FALSE, static_cast<GLsizei>(6 * sizeof(GLfloat)), static_cast<GLintptr>(0)},
-		{color_attrib_name, 3, GL_FLOAT, GL_FALSE, static_cast<GLsizei>(6 * sizeof(GLfloat)), static_cast<GLintptr>(3 * sizeof(GLfloat))} };
+		{point_attrib_name, 3, GL_FLOAT, GL_FALSE, static_cast<GLsizei>(3 * sizeof(GLfloat)), static_cast<GLintptr>(0)}
+	};
 	
+	std::vector<std::string_view> uniform_attribs_1{
+		time_attrib_name
+	};
+
 	std::vector<std::string_view> uniform_attribs_2{
-		time_attrib_name };
+		time_attrib_name
+	};
 	
 	std::vector<shape> shapes;
 	shapes.reserve(figures.size());
-	shapes.emplace_back(std::move(figures[0]), GL_STATIC_DRAW, programs[0].get_id(), std::move(attribs_1));
-	shapes.emplace_back(std::move(figures[1]), GL_STATIC_DRAW, programs[1].get_id(), std::move(attribs_2), std::move(uniform_attribs_2));
+	shapes.emplace_back(std::move(figures[0]), GL_STATIC_DRAW, programs[0].get_id(), std::move(attribs_0));
+	shapes.emplace_back(std::move(figures[1]), GL_STATIC_DRAW, programs[1].get_id(), std::move(attribs_1), std::move(uniform_attribs_1));
+	shapes.emplace_back(std::move(figures[2]), std::move(indices), GL_STATIC_DRAW, programs[2].get_id(), std::move(attribs_2), std::move(uniform_attribs_2));
 
 	glClearColor(background_rgba.r, background_rgba.g, background_rgba.b, background_rgba.a);
+	
+	programs[1].use_program();
+	auto time_uniform_id_1 = shapes[1].get_uniforms_id()[0];
+
+	programs[2].use_program();
+	auto time_uniform_id_2 = shapes[2].get_uniforms_id()[0];
 
 	while (!glfwWindowShouldClose(window)) {
-		double time = glfwGetTime();
+		float time = glfwGetTime();
 
 		glClear(GL_COLOR_BUFFER_BIT); // GL_DEPTH_BUFFER_BIT    GL_STENCIL_BUFFER_BIT
-		
+
 		shapes[0].bind_vao();
 		programs[0].use_program();
 		glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -180,16 +198,18 @@ int main() {
 		
 		shapes[1].bind_vao();
 		programs[1].use_program();
-		auto time_uniform_id = shapes[1].get_uniforms_id()[0];
-		glUniform1f(time_uniform_id, time);
+		glUniform1f(time_uniform_id_1, time);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		shapes[2].bind_vao();
+		programs[2].use_program();
+		glUniform1f(time_uniform_id_2, time);
+		glDrawElements(GL_TRIANGLES, shapes[2].indices_size(), GL_UNSIGNED_INT, nullptr);
 
 		glfwSwapBuffers(window);
 		
 		poll_events(window);
 	}
-
-
 
 	for (shape& figure : shapes)
 		figure.release_resources();

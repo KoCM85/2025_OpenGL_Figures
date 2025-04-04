@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.28)
 
-set(VERSION_MAJOR 3)
-set(VERSION_MINOR 1)
-set(VERSION_PATCH 1)
+set(VERSION_MAJOR 4)
+set(VERSION_MINOR 0)
+set(VERSION_PATCH 0)
 
 project(OpenGL_Figures LANGUAGES C CXX VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
@@ -33,10 +33,11 @@ set(PROJ_SHADER_DIR ${PROJ_SOURCE_DIR}/shaders)
 set(PROJ_CPP_SOURCE_DIR ${PROJ_SOURCE_DIR}/cpp_sources)
 
 set(PROJ_SHADER_SOURCES 
-	${PROJ_SHADER_DIR}/1_StaticObj_Interpolation.vert
-	${PROJ_SHADER_DIR}/1_Interpolation.frag
-	${PROJ_SHADER_DIR}/2_StaticObj.vert
-	${PROJ_SHADER_DIR}/2_dynamicInterpolation.frag
+	${PROJ_SHADER_DIR}/StaticObj_Color.vert
+	${PROJ_SHADER_DIR}/Interpolation.frag
+	${PROJ_SHADER_DIR}/DynamicInterpolation.frag
+	${PROJ_SHADER_DIR}/DynamicObj.vert
+	${PROJ_SHADER_DIR}/DynamicColor.frag
 )
 set(PROJ_TEMP_SOURCES
 	${PROJ_TEMP_DIR}/version.h
